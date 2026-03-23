@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Smart Fuel Cost Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f7;--surface:#ffffff;--surface2:#f7f8fc;
+  --border:#e4e7f0;--border2:#d0d5e8;
+  --accent:#2563eb;--accent-light:#eff4ff;--accent2:#7c3aed;
+  --green:#059669;--green-light:#ecfdf5;
+  --red:#dc2626;--red-light:#fef2f2;
+  --amber:#d97706;--amber-light:#fffbeb;
+  --text:#0f1628;--text2:#4b5675;--muted:#9aa0b8;
+  --radius:16px;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.06);
+}
+body{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;padding:32px 16px 80px;
+  position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(37,99,235,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,0.03) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+}
+header{text-align:center;margin-bottom:40px;animation:fadeDown .6s ease both;}
+.logo{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:99px;padding:8px 20px 8px 12px;margin-bottom:20px;
+  box-shadow:var(--shadow);
+}
+.logo-icon{
+  width:32px;height:32px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;
+}
+.logo span{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text2);letter-spacing:1px;text-transform:uppercase;}
+h1{font-size:clamp(2rem,5vw,3rem);font-weight:800;color:var(--text);letter-spacing:-1.5px;line-height:1.1;}
+h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.tagline{font-size:.9rem;color:var(--muted);margin-top:8px;}
+.container{max-width:640px;margin:0 auto;}
+
+/* Stepper */
+.stepper{display:flex;align-items:center;margin-bottom:28px;animation:fadeUp .5s ease .1s both;}
+.step-item{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;}
+.step-item:not(:last-child)::after{
+  content:'';position:absolute;top:16px;left:60%;width:80%;height:2px;
+  background:var(--border2);transition:background .4s;
+}
+.step-item.done:not(:last-child)::after,.step-item.active:not(:last-child)::after{background:var(--accent);}
+.step-circle{
+  width:32px;height:32px;border-radius:50%;border:2px solid var(--border2);
+  background:var(--surface);display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:700;color:var(--muted);transition:all .3s;position:relative;z-index:1;
+}
+.step-item.active .step-circle{border-color:var(--accent);background:var(--accent);color:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.15);}
+.step-item.done .step-circle{border-color:var(--green);background:var(--green);color:#fff;}
+.step-label{font-size:.65rem;font-weight:600;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.step-item.active .step-label{color:var(--accent);}
+.step-item.done .step-label{color:var(--green);}
+
+/* Card */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:28px;
+  box-shadow:var(--shadow);animation:fadeUp .5s ease both;margin-bottom:16px;
+}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:24px;}
+.card-num{
+  width:28px;height:28px;background:var(--accent-light);color:var(--accent);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:800;flex-shrink:0;
+}
+.card-title{font-size:1rem;font-weight:700;color:var(--text);}
+.card-sub{font-size:.78rem;color:var(--muted);margin-top:1px;}
+
+/* Type grid */
+.type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media(max-width:480px){.type-grid{grid-template-columns:repeat(2,1fr);}}
+.type-btn{
+  border:2px solid var(--border);background:var(--surface2);
+  border-radius:12px;padding:16px 8px 14px;text-align:center;
+  cursor:pointer;transition:all .2s;user-select:none;
+}
+.type-btn:hover{border-color:var(--border2);background:#fff;transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08);}
+.type-btn.selected{border-color:var(--accent);background:var(--accent-light);box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+.type-emoji{font-size:2rem;display:block;margin-bottom:8px;line-height:1;}
+.type-label{font-size:.78rem;font-weight:700;color:var(--text2);}
+.type-btn.selected .type-label{color:var(--accent);}
+
+/* Form */
+.select-wrap{margin-bottom:16px;}
+.sel-label{font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.custom-select{position:relative;}
+.custom-select select{
+  width:100%;background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:10px;padding:12px 40px 12px 14px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;color:var(--text);
+  outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none;
+}
+.custom-select select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);background:#fff;}
+.custom-select::after{content:'▾';position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:.85rem;}
+
+/* Model search */
+.model-search-wrap{position:relative;}
+.search-icon-inner{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:.9rem;color:var(--muted);pointer-events:none;}
+.search-input{
+  width:100%;background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:10px;padding:12px 14px 12px 38px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;color:var(--text);
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);background:#fff;}
+.model-dropdown{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.12);
+  z-index:100;max-height:260px;overflow-y:auto;display:none;
+}
+.model-dropdown.open{display:block;animation:dropIn .15s ease both;}
+.model-option{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;cursor:pointer;transition:background .15s;
+  border-bottom:1px solid var(--border);
+}
+.model-option:last-child{border-bottom:none;}
+.model-option:hover,.model-option:focus{background:var(--accent-light);}
+.model-name-main{font-size:.88rem;font-weight:600;color:var(--text);}
+.model-brand-tag{color:var(--muted);font-weight:500;font-size:.78rem;}
+.model-stats-tag{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);text-align:right;white-space:nowrap;}
+.model-stats-tag b{color:var(--accent);font-weight:600;}
+.no-model-opt{
+  padding:12px 16px;font-size:.84rem;color:var(--text2);
+  border-top:1px dashed var(--border2);cursor:pointer;
+  display:flex;align-items:center;gap:8px;
+}
+.no-model-opt:hover{background:var(--amber-light);}
+.badge-amber{background:var(--amber-light);color:var(--amber);border:1px solid #fcd34d;border-radius:99px;padding:2px 8px;font-size:.65rem;font-weight:700;white-space:nowrap;}
+.model-empty{padding:20px;text-align:center;font-size:.82rem;color:var(--muted);}
+
+/* Chip */
+.vehicle-chip{
+  display:flex;align-items:center;gap:12px;
+  background:var(--accent-light);border:1.5px solid rgba(37,99,235,.2);
+  border-radius:12px;padding:14px 16px;margin-top:4px;
+}
+.chip-icon{font-size:1.6rem;line-height:1;}
+.chip-info{flex:1;min-width:0;}
+.chip-name{font-weight:700;font-size:.95rem;color:var(--text);}
+.chip-meta{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text2);margin-top:3px;}
+.chip-meta b{color:var(--accent);}
+.chip-change{font-size:.72rem;color:var(--accent);font-weight:600;cursor:pointer;padding:4px 10px;border-radius:99px;border:1px solid rgba(37,99,235,.25);background:#fff;transition:all .15s;white-space:nowrap;flex-shrink:0;}
+.chip-change:hover{background:var(--accent);color:#fff;}
+
+/* Override */
+.override-row{display:flex;align-items:center;gap:10px;margin-top:16px;padding-top:16px;border-top:1px dashed var(--border2);}
+.override-label{font-size:.75rem;color:var(--muted);flex:1;}
+.toggle{width:36px;height:20px;background:var(--border2);border-radius:99px;cursor:pointer;transition:background .2s;position:relative;flex-shrink:0;}
+.toggle.on{background:var(--accent);}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.toggle.on::after{left:19px;}
+.override-fields{display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+.override-fields.show{display:grid;}
+.field-label-sm{font-size:.7rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.field-input-wrap{position:relative;}
+.field-input{
+  width:100%;background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:10px;padding:11px 50px 11px 14px;
+  font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--text);
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.field-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);background:#fff;}
+.field-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);pointer-events:none;}
+
+/* Trip */
+.trip-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:480px){.trip-grid{grid-template-columns:1fr;}}
+
+/* Button */
+.calc-btn{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border:none;border-radius:12px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:700;
+  cursor:pointer;transition:all .2s;box-shadow:0 4px 20px rgba(37,99,235,.3);
+  margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.calc-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(37,99,235,.4);}
+.calc-btn:active{transform:translateY(0);}
+
+/* Results */
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
+.results-title{font-size:1rem;font-weight:700;}
+.results-vlabel{font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;}
+@media(max-width:400px){.stat-grid{grid-template-columns:1fr;}}
+.stat{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;transition:transform .2s;}
+.stat:hover{transform:translateY(-2px);}
+.stat.accent{background:linear-gradient(135deg,rgba(37,99,235,.06),rgba(124,58,237,.04));border-color:rgba(37,99,235,.2);}
+.stat-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.stat-val{font-size:1.6rem;font-weight:800;color:var(--text);line-height:1;}
+.stat.accent .stat-val{color:var(--accent);}
+.stat-unit{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);margin-top:4px;}
+.status-box{border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;}
+.status-box.ok{background:var(--green-light);border:1.5px solid rgba(5,150,105,.2);}
+.status-box.warn{background:var(--red-light);border:1.5px solid rgba(220,38,38,.2);}
+.s-icon{font-size:1.3rem;flex-shrink:0;margin-top:1px;}
+.s-title{font-weight:700;font-size:.9rem;}
+.status-box.ok .s-title{color:var(--green);}
+.status-box.warn .s-title{color:var(--red);}
+.s-sub{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text2);margin-top:4px;}
+.bar-wrap{margin-top:4px;}
+.bar-labels{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);margin-bottom:6px;}
+.bar-bg{height:8px;background:var(--border);border-radius:99px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:99px;transition:width .9s cubic-bezier(.23,1,.32,1);background:linear-gradient(90deg,var(--green),#10b981);}
+.bar-fill.over{background:linear-gradient(90deg,var(--red),#ef4444);}
+.reset-btn{width:100%;padding:12px;background:transparent;color:var(--text2);border:1.5px solid var(--border);border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:8px;}
+.reset-btn:hover{background:var(--surface2);border-color:var(--border2);}
+
+/* Errors */
+.err-msg{font-size:.7rem;color:var(--red);margin-top:5px;display:none;font-weight:500;}
+.has-error .field-input,.has-error .search-input{border-color:var(--red)!important;}
+.has-error .err-msg{display:block;}
+
+.hidden{display:none!important;}
+
+@keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+.pop{animation:popIn .3s ease both;}
+.shake{animation:shakeAnim .35s ease;}
+@keyframes shakeAnim{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+.model-dropdown::-webkit-scrollbar{width:6px;}
+.model-dropdown::-webkit-scrollbar-track{background:transparent;}
+.model-dropdown::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px;}
+
+/* ── Mode Switcher ── */
+.mode-switcher{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:14px;padding:4px;margin-bottom:28px;
+  animation:fadeUp .5s ease .05s both;
+}
+.mode-btn{
+  border:none;background:transparent;border-radius:10px;
+  padding:13px 10px;cursor:pointer;transition:all .22s;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+.mode-btn:hover:not(.active){background:rgba(37,99,235,.05);}
+.mode-btn.active{
+  background:var(--surface);
+  box-shadow:0 2px 8px rgba(0,0,0,.08),0 0 0 1px var(--border);
+}
+.mode-icon{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;
+}
+.mode-btn.active:nth-child(1) .mode-icon{background:rgba(37,99,235,.12);}
+.mode-btn.active:nth-child(2) .mode-icon{background:rgba(5,150,105,.12);}
+.mode-btn:not(.active) .mode-icon{background:rgba(0,0,0,.04);}
+.mode-title{font-size:.82rem;font-weight:700;color:var(--text2);line-height:1.2;text-align:center;}
+.mode-sub{font-size:.67rem;color:var(--muted);text-align:center;line-height:1.3;}
+.mode-btn.active:nth-child(1) .mode-title{color:var(--accent);}
+.mode-btn.active:nth-child(2) .mode-title{color:var(--green);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⛽</div>
+    <span>Smart Fuel Calculator</span>
+  </div>
+  <h1>Your <em>smart fuel</em><br/>calculator</h1>
+  <p class="tagline">Select a mode, pick your vehicle, get instant answers</p>
+</header>
+
+<div class="container">
+
+
+  <!-- Mode Switcher -->
+  <div class="mode-switcher">
+    <button class="mode-btn active" id="modeA" onclick="switchMode('A')">
+      <div class="mode-icon">📍</div>
+      <div class="mode-title">Trip Cost</div>
+      <div class="mode-sub">How much will a<br/>distance cost?</div>
+    </button>
+    <button class="mode-btn" id="modeB" onclick="switchMode('B')">
+      <div class="mode-icon">🛣️</div>
+      <div class="mode-title">Distance Range</div>
+      <div class="mode-sub">How far can I go<br/>with ₹ budget?</div>
+    </button>
+  </div>
+
+  <div class="stepper" id="stepper">
+    <div class="step-item active" id="sdot1"><div class="step-circle">1</div><div class="step-label">Vehicle</div></div>
+    <div class="step-item" id="sdot2"><div class="step-circle">2</div><div class="step-label">Brand &amp; Model</div></div>
+    <div class="step-item" id="sdot3"><div class="step-circle">3</div><div class="step-label">Trip</div></div>
+    <div class="step-item" id="sdot4"><div class="step-circle">4</div><div class="step-label">Results</div></div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="card" id="c1">
+    <div class="card-header">
+      <div class="card-num">1</div>
+      <div><div class="card-title">Select Vehicle Type</div><div class="card-sub">What are you driving?</div></div>
+    </div>
+    <div class="type-grid">
+      <div class="type-btn" data-type="bike" onclick="selectType(this)"><span class="type-emoji">🏍️</span><span class="type-label">Bike</span></div>
+      <div class="type-btn" data-type="scooter" onclick="selectType(this)"><span class="type-emoji">🛵</span><span class="type-label">Scooter</span></div>
+      <div class="type-btn" data-type="car" onclick="selectType(this)"><span class="type-emoji">🚗</span><span class="type-label">Car / SUV</span></div>
+      <div class="type-btn" data-type="truck" onclick="selectType(this)"><span class="type-emoji">🚛</span><span class="type-label">Truck / Bus</span></div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card hidden" id="c2" style="animation-delay:.08s">
+    <div class="card-header">
+      <div class="card-num">2</div>
+      <div><div class="card-title">Select Brand &amp; Model</div><div class="card-sub">Specs will auto-fill instantly</div></div>
+    </div>
+
+    <div class="select-wrap">
+      <div class="sel-label">Brand</div>
+      <div class="custom-select">
+        <select id="brandSel" onchange="onBrandChange()">
+          <option value="">— Choose brand —</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="select-wrap">
+      <div class="sel-label">Model</div>
+      <div class="model-search-wrap">
+        <span class="search-icon-inner">🔍</span>
+        <input type="text" id="modelQ" class="search-input" placeholder="Search or type model name…"
+               oninput="onModelSearch()" onfocus="openDD()" autocomplete="off"/>
+        <div class="model-dropdown" id="modelDD"></div>
+      </div>
+    </div>
+
+    <div id="vchip" class="hidden"></div>
+
+    <div class="override-row">
+      <span class="override-label">✏️ Override auto-filled values</span>
+      <div class="toggle" id="ovToggle" onclick="toggleOverride()"></div>
+    </div>
+    <div class="override-fields" id="ovFields">
+      <div id="fg-ov-mil">
+        <div class="field-label-sm">Mileage</div>
+        <div class="field-input-wrap">
+          <input type="number" class="field-input" id="ovMil" placeholder="km/L" min="0" step="0.1"/>
+          <span class="field-unit">km/L</span>
+        </div>
+        <div class="err-msg">Enter valid mileage.</div>
+      </div>
+      <div id="fg-ov-tank">
+        <div class="field-label-sm">Tank Capacity</div>
+        <div class="field-input-wrap">
+          <input type="number" class="field-input" id="ovTank" placeholder="Liters" min="0" step="0.5"/>
+          <span class="field-unit">L</span>
+        </div>
+        <div class="err-msg">Enter valid capacity.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="card hidden" id="c3" style="animation-delay:.12s">
+    <div class="card-header">
+      <div class="card-num">3</div>
+      <div>
+        <div class="card-title" id="c3-title">Trip Details</div>
+        <div class="card-sub" id="c3-sub">Distance &amp; current fuel price</div>
+      </div>
+    </div>
+    <div class="trip-grid">
+      <!-- Mode A: distance (shown in both modes) is replaced by budget in mode B -->
+      <div id="fg-dist">
+        <div class="field-label-sm" id="lbl-input1">Distance to Travel</div>
+        <div class="field-input-wrap">
+          <input type="number" class="field-input" id="dist" placeholder="e.g. 300" min="0" step="1"/>
+          <span class="field-unit" id="unit-input1">km</span>
+        </div>
+        <div class="err-msg">Enter a valid value.</div>
+      </div>
+      <div id="fg-price">
+        <div class="field-label-sm">Fuel Price</div>
+        <div class="field-input-wrap">
+          <input type="number" class="field-input" id="fprice" placeholder="e.g. 103.5" min="0" step="0.01"/>
+          <span class="field-unit">₹/L</span>
+        </div>
+        <div class="err-msg">Enter a valid price.</div>
+      </div>
+    </div>
+    <button class="calc-btn" id="calcBtnLabel" onclick="calculate()">Calculate Trip Cost <span>→</span></button>
+  </div>
+
+  <!-- STEP 4 Results -->
+  <div class="card hidden" id="c4">
+    <div class="results-header">
+      <div class="results-title">Trip Analysis</div>
+      <div class="results-vlabel" id="rvlabel"></div>
+    </div>
+    <div id="rbody"></div>
+    <button class="reset-btn" onclick="resetAll()">↺ Start Over</button>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// VEHICLE DATABASE  — 60+ vehicles
+// ══════════════════════════════════════════════════════
+const DB = {
+  bike:{
+    "Hero":[
+      {model:"Splendor Plus",      mileage:65, tank:11.5, fuel:"Petrol"},
+      {model:"Splendor+ XTEC",     mileage:67, tank:11.5, fuel:"Petrol"},
+      {model:"HF Deluxe",          mileage:72, tank:9.5,  fuel:"Petrol"},
+      {model:"HF 100",             mileage:80, tank:9.5,  fuel:"Petrol"},
+      {model:"Passion Pro",        mileage:60, tank:11,   fuel:"Petrol"},
+      {model:"Passion XTEC",       mileage:60, tank:11,   fuel:"Petrol"},
+      {model:"Glamour 125",        mileage:55, tank:13,   fuel:"Petrol"},
+      {model:"Glamour XTEC",       mileage:55, tank:13,   fuel:"Petrol"},
+      {model:"Super Splendor",     mileage:55, tank:13.5, fuel:"Petrol"},
+      {model:"Xtreme 125R",        mileage:55, tank:12,   fuel:"Petrol"},
+      {model:"Xtreme 160R",        mileage:45, tank:13.5, fuel:"Petrol"},
+      {model:"Xtreme 160R 4V",     mileage:43, tank:13.5, fuel:"Petrol"},
+      {model:"Xtreme 200S",        mileage:40, tank:12.5, fuel:"Petrol"},
+      {model:"Xpulse 200",         mileage:35, tank:13,   fuel:"Petrol"},
+      {model:"Xpulse 200T",        mileage:38, tank:13,   fuel:"Petrol"},
+      {model:"Mavrick 440",        mileage:28, tank:17,   fuel:"Petrol"},
+    ],
+    "Bajaj":[
+      {model:"CT 100",             mileage:89, tank:11.5, fuel:"Petrol"},
+      {model:"CT 110",             mileage:80, tank:11.5, fuel:"Petrol"},
+      {model:"CT 110X",            mileage:75, tank:11.5, fuel:"Petrol"},
+      {model:"Platina 100",        mileage:80, tank:11.5, fuel:"Petrol"},
+      {model:"Platina 110",        mileage:70, tank:11.5, fuel:"Petrol"},
+      {model:"Platina H-Gear",     mileage:68, tank:11.5, fuel:"Petrol"},
+      {model:"Pulsar 125",         mileage:55, tank:11.5, fuel:"Petrol"},
+      {model:"Pulsar 150",         mileage:50, tank:15,   fuel:"Petrol"},
+      {model:"Pulsar 150 Twin",    mileage:48, tank:15,   fuel:"Petrol"},
+      {model:"Pulsar 180",         mileage:45, tank:15,   fuel:"Petrol"},
+      {model:"Pulsar NS160",       mileage:45, tank:14,   fuel:"Petrol"},
+      {model:"Pulsar NS200",       mileage:35, tank:12,   fuel:"Petrol"},
+      {model:"Pulsar N150",        mileage:48, tank:14,   fuel:"Petrol"},
+      {model:"Pulsar N160",        mileage:45, tank:14,   fuel:"Petrol"},
+      {model:"Pulsar N250",        mileage:35, tank:14,   fuel:"Petrol"},
+      {model:"Pulsar F250",        mileage:33, tank:14,   fuel:"Petrol"},
+      {model:"Dominar 250",        mileage:35, tank:13.5, fuel:"Petrol"},
+      {model:"Dominar 400",        mileage:28, tank:13.5, fuel:"Petrol"},
+      {model:"Avenger Street 160", mileage:38, tank:13,   fuel:"Petrol"},
+      {model:"Avenger Cruise 220", mileage:35, tank:14,   fuel:"Petrol"},
+      {model:"RS200",              mileage:35, tank:13,   fuel:"Petrol"},
+    ],
+    "Royal Enfield":[
+      {model:"Hunter 350",         mileage:36, tank:13,   fuel:"Petrol"},
+      {model:"Classic 350",        mileage:35, tank:13.5, fuel:"Petrol"},
+      {model:"Bullet 350",         mileage:35, tank:13.5, fuel:"Petrol"},
+      {model:"Bullet 650",         mileage:28, tank:15.7, fuel:"Petrol"},
+      {model:"Meteor 350",         mileage:30, tank:15,   fuel:"Petrol"},
+      {model:"Thunderbird 350X",   mileage:30, tank:20,   fuel:"Petrol"},
+      {model:"Scram 411",          mileage:28, tank:15,   fuel:"Petrol"},
+      {model:"Himalayan 411",      mileage:30, tank:15,   fuel:"Petrol"},
+      {model:"Himalayan 450",      mileage:28, tank:17,   fuel:"Petrol"},
+      {model:"Interceptor 650",    mileage:25, tank:13.7, fuel:"Petrol"},
+      {model:"Continental GT 650", mileage:25, tank:13.7, fuel:"Petrol"},
+      {model:"Super Meteor 650",   mileage:22, tank:15.7, fuel:"Petrol"},
+      {model:"Guerrilla 450",      mileage:28, tank:17,   fuel:"Petrol"},
+    ],
+    "TVS":[
+      {model:"Sport",              mileage:70, tank:10,   fuel:"Petrol"},
+      {model:"Radeon",             mileage:69, tank:10,   fuel:"Petrol"},
+      {model:"Star City+",         mileage:65, tank:10,   fuel:"Petrol"},
+      {model:"Max 4R",             mileage:69, tank:10,   fuel:"Petrol"},
+      {model:"Raider 125",         mileage:67, tank:10,   fuel:"Petrol"},
+      {model:"Apache RTR 160",     mileage:45, tank:12,   fuel:"Petrol"},
+      {model:"Apache RTR 160 4V",  mileage:45, tank:12,   fuel:"Petrol"},
+      {model:"Apache RTR 200 4V",  mileage:40, tank:12,   fuel:"Petrol"},
+      {model:"Apache RR 310",      mileage:30, tank:11,   fuel:"Petrol"},
+      {model:"Ronin",              mileage:35, tank:14,   fuel:"Petrol"},
+    ],
+    "Honda":[
+      {model:"CD 110 Dream",       mileage:72, tank:10,   fuel:"Petrol"},
+      {model:"Shine 100",          mileage:65, tank:10,   fuel:"Petrol"},
+      {model:"SP 125",             mileage:65, tank:11,   fuel:"Petrol"},
+      {model:"CB Shine",           mileage:60, tank:11,   fuel:"Petrol"},
+      {model:"CB Shine SP",        mileage:60, tank:11,   fuel:"Petrol"},
+      {model:"CB Unicorn",         mileage:55, tank:13,   fuel:"Petrol"},
+      {model:"X-Blade",            mileage:45, tank:12,   fuel:"Petrol"},
+      {model:"CB Hornet 2.0",      mileage:40, tank:12,   fuel:"Petrol"},
+      {model:"CB300R",             mileage:30, tank:12,   fuel:"Petrol"},
+      {model:"CB300F",             mileage:32, tank:12,   fuel:"Petrol"},
+      {model:"CB500F",             mileage:22, tank:17.7, fuel:"Petrol"},
+      {model:"CBR650R",            mileage:18, tank:15.4, fuel:"Petrol"},
+    ],
+    "Yamaha":[
+      {model:"Saluto 125",         mileage:62, tank:13,   fuel:"Petrol"},
+      {model:"FZ-Fi V3",           mileage:48, tank:13,   fuel:"Petrol"},
+      {model:"FZ-S Fi V3",         mileage:45, tank:13,   fuel:"Petrol"},
+      {model:"FZS 25",             mileage:38, tank:14,   fuel:"Petrol"},
+      {model:"MT-15 V2",           mileage:40, tank:10,   fuel:"Petrol"},
+      {model:"R15 V4",             mileage:35, tank:11,   fuel:"Petrol"},
+      {model:"R15S",               mileage:37, tank:11,   fuel:"Petrol"},
+      {model:"R3",                 mileage:28, tank:14,   fuel:"Petrol"},
+      {model:"MT-03",              mileage:28, tank:14,   fuel:"Petrol"},
+    ],
+    "Suzuki":[
+      {model:"Gixxer 150",         mileage:50, tank:12,   fuel:"Petrol"},
+      {model:"Gixxer 250",         mileage:35, tank:12.8, fuel:"Petrol"},
+      {model:"Gixxer SF 150",      mileage:48, tank:12,   fuel:"Petrol"},
+      {model:"Gixxer SF 250",      mileage:35, tank:12.8, fuel:"Petrol"},
+      {model:"Intruder 150",       mileage:45, tank:14,   fuel:"Petrol"},
+    ],
+    "KTM":[
+      {model:"Duke 125",           mileage:45, tank:13.5, fuel:"Petrol"},
+      {model:"Duke 200",           mileage:35, tank:13.5, fuel:"Petrol"},
+      {model:"Duke 250",           mileage:32, tank:13.5, fuel:"Petrol"},
+      {model:"Duke 390",           mileage:28, tank:13.5, fuel:"Petrol"},
+      {model:"RC 125",             mileage:42, tank:13.5, fuel:"Petrol"},
+      {model:"RC 200",             mileage:33, tank:13.5, fuel:"Petrol"},
+      {model:"RC 390",             mileage:28, tank:13.5, fuel:"Petrol"},
+      {model:"Adventure 250",      mileage:30, tank:14.5, fuel:"Petrol"},
+      {model:"Adventure 390",      mileage:25, tank:14.5, fuel:"Petrol"},
+    ],
+    "Kawasaki":[
+      {model:"Ninja 300",          mileage:25, tank:17,   fuel:"Petrol"},
+      {model:"Ninja 400",          mileage:22, tank:14,   fuel:"Petrol"},
+      {model:"Z400",               mileage:22, tank:14,   fuel:"Petrol"},
+      {model:"Ninja 650",          mileage:20, tank:15,   fuel:"Petrol"},
+      {model:"Versys 650",         mileage:20, tank:21,   fuel:"Petrol"},
+      {model:"Z900",               mileage:18, tank:17,   fuel:"Petrol"},
+    ],
+  },
+  scooter:{
+    "Honda":[
+      {model:"Activa 4G",          mileage:48, tank:5.3,  fuel:"Petrol"},
+      {model:"Activa 5G",          mileage:50, tank:5.3,  fuel:"Petrol"},
+      {model:"Activa 6G",          mileage:50, tank:5.3,  fuel:"Petrol"},
+      {model:"Activa 125",         mileage:52, tank:5.3,  fuel:"Petrol"},
+      {model:"Activa 125 H-Smart", mileage:54, tank:5.3,  fuel:"Petrol"},
+      {model:"Dio",                mileage:47, tank:5.3,  fuel:"Petrol"},
+      {model:"Dio 125",            mileage:47, tank:5.3,  fuel:"Petrol"},
+      {model:"Grazia 125",         mileage:48, tank:5.3,  fuel:"Petrol"},
+      {model:"Aviator",            mileage:45, tank:5.3,  fuel:"Petrol"},
+      {model:"Cliq",               mileage:55, tank:4.5,  fuel:"Petrol"},
+    ],
+    "TVS":[
+      {model:"XL100",              mileage:65, tank:4.5,  fuel:"Petrol"},
+      {model:"Scooty Pep+",        mileage:62, tank:5,    fuel:"Petrol"},
+      {model:"Scooty Zest 110",    mileage:62, tank:5,    fuel:"Petrol"},
+      {model:"Jupiter",            mileage:55, tank:5.1,  fuel:"Petrol"},
+      {model:"Jupiter 125",        mileage:52, tank:5.1,  fuel:"Petrol"},
+      {model:"NTORQ 125",          mileage:44, tank:5.1,  fuel:"Petrol"},
+      {model:"NTORQ 125 Race XP",  mileage:42, tank:5.1,  fuel:"Petrol"},
+      {model:"iQube Electric",     mileage:75, tank:3.04, fuel:"Electric"},
+    ],
+    "Suzuki":[
+      {model:"Access 125",         mileage:49, tank:5.6,  fuel:"Petrol"},
+      {model:"Access 125 SE",      mileage:49, tank:5.6,  fuel:"Petrol"},
+      {model:"Burgman Street 125", mileage:43, tank:5.6,  fuel:"Petrol"},
+      {model:"Avenis 125",         mileage:47, tank:5.6,  fuel:"Petrol"},
+    ],
+    "Hero":[
+      {model:"Pleasure+ 110",      mileage:58, tank:5,    fuel:"Petrol"},
+      {model:"Pleasure+ XTEC",     mileage:58, tank:5,    fuel:"Petrol"},
+      {model:"Destini 125",        mileage:51, tank:5.3,  fuel:"Petrol"},
+      {model:"Destini 125 Prime",  mileage:51, tank:5.3,  fuel:"Petrol"},
+      {model:"Maestro Edge 110",   mileage:55, tank:5.5,  fuel:"Petrol"},
+      {model:"Maestro Edge 125",   mileage:50, tank:5.5,  fuel:"Petrol"},
+      {model:"Xoom 110",           mileage:55, tank:5,    fuel:"Petrol"},
+      {model:"Xoom 125R",          mileage:52, tank:5.2,  fuel:"Petrol"},
+    ],
+    "Yamaha":[
+      {model:"Fascino 125 Fi",     mileage:55, tank:5.2,  fuel:"Petrol"},
+      {model:"Ray ZR 110",         mileage:58, tank:5.2,  fuel:"Petrol"},
+      {model:"Ray ZR 125 Fi",      mileage:52, tank:5.2,  fuel:"Petrol"},
+      {model:"Aerox 155",          mileage:40, tank:11,   fuel:"Petrol"},
+    ],
+    "Piaggio":[
+      {model:"Vespa SXL 150",      mileage:38, tank:8,    fuel:"Petrol"},
+      {model:"Vespa VXL 150",      mileage:38, tank:8,    fuel:"Petrol"},
+      {model:"Vespa ZX 125",       mileage:44, tank:7,    fuel:"Petrol"},
+      {model:"Vespa Elegante 150", mileage:37, tank:8,    fuel:"Petrol"},
+    ],
+    "Ola":[
+      {model:"S1 Air",             mileage:48, tank:2.5,  fuel:"Electric"},
+      {model:"S1",                 mileage:52, tank:3.97, fuel:"Electric"},
+      {model:"S1 Pro",             mileage:55, tank:3.97, fuel:"Electric"},
+      {model:"S1 Pro Gen 2",       mileage:58, tank:3.97, fuel:"Electric"},
+    ],
+    "Bajaj":[
+      {model:"Chetak 2901",        mileage:70, tank:3.0,  fuel:"Electric"},
+      {model:"Chetak Premium",     mileage:72, tank:3.0,  fuel:"Electric"},
+    ],
+    "Ather":[
+      {model:"450X",               mileage:70, tank:2.9,  fuel:"Electric"},
+      {model:"450 Apex",           mileage:68, tank:3.7,  fuel:"Electric"},
+      {model:"Rizta",              mileage:65, tank:2.9,  fuel:"Electric"},
+    ],
+  },
+  car:{
+    "Maruti Suzuki":[
+      {model:"Alto 800",           mileage:23, tank:27,   fuel:"Petrol"},
+      {model:"Alto K10",           mileage:24, tank:27,   fuel:"Petrol"},
+      {model:"S-Presso",           mileage:25, tank:27,   fuel:"Petrol"},
+      {model:"WagonR 1.0",         mileage:24, tank:32,   fuel:"Petrol"},
+      {model:"WagonR 1.2",         mileage:23, tank:32,   fuel:"Petrol"},
+      {model:"Celerio",            mileage:26, tank:32,   fuel:"Petrol"},
+      {model:"Swift",              mileage:22, tank:37,   fuel:"Petrol"},
+      {model:"Swift ZXI+",         mileage:22, tank:37,   fuel:"Petrol"},
+      {model:"Baleno",             mileage:22, tank:37,   fuel:"Petrol"},
+      {model:"Swift Dzire",        mileage:23, tank:37,   fuel:"Petrol"},
+      {model:"Dzire Tour S",       mileage:24, tank:37,   fuel:"Petrol"},
+      {model:"Ignis",              mileage:21, tank:32,   fuel:"Petrol"},
+      {model:"Fronx",              mileage:21, tank:37,   fuel:"Petrol"},
+      {model:"Brezza",             mileage:19, tank:48,   fuel:"Petrol"},
+      {model:"Ertiga",             mileage:20, tank:45,   fuel:"Petrol"},
+      {model:"XL6",                mileage:19, tank:45,   fuel:"Petrol"},
+      {model:"Grand Vitara",       mileage:19, tank:45,   fuel:"Petrol"},
+      {model:"Grand Vitara Hybrid",mileage:27, tank:45,   fuel:"Hybrid"},
+      {model:"Ciaz",               mileage:20, tank:42,   fuel:"Petrol"},
+      {model:"Jimny",              mileage:16, tank:40,   fuel:"Petrol"},
+      {model:"Invicto",            mileage:21, tank:52,   fuel:"Hybrid"},
+    ],
+    "Hyundai":[
+      {model:"Santro",             mileage:20, tank:35,   fuel:"Petrol"},
+      {model:"Grand i10 Nios",     mileage:20, tank:35,   fuel:"Petrol"},
+      {model:"i20",                mileage:20, tank:40,   fuel:"Petrol"},
+      {model:"i20 N Line",         mileage:19, tank:40,   fuel:"Petrol"},
+      {model:"Aura",               mileage:20, tank:37,   fuel:"Petrol"},
+      {model:"Venue",              mileage:18, tank:45,   fuel:"Petrol"},
+      {model:"Venue N Line",       mileage:17, tank:45,   fuel:"Petrol"},
+      {model:"Creta",              mileage:17, tank:50,   fuel:"Petrol"},
+      {model:"Creta EV",           mileage:50, tank:51.4, fuel:"Electric"},
+      {model:"Verna",              mileage:20, tank:45,   fuel:"Petrol"},
+      {model:"Alcazar",            mileage:14, tank:50,   fuel:"Diesel"},
+      {model:"Tucson",             mileage:14, tank:54,   fuel:"Petrol"},
+      {model:"Ioniq 5",            mileage:45, tank:72.6, fuel:"Electric"},
+    ],
+    "Tata":[
+      {model:"Tiago",              mileage:19, tank:35,   fuel:"Petrol"},
+      {model:"Tiago EV",           mileage:55, tank:24,   fuel:"Electric"},
+      {model:"Tigor",              mileage:19, tank:35,   fuel:"Petrol"},
+      {model:"Tigor EV",           mileage:55, tank:26,   fuel:"Electric"},
+      {model:"Punch",              mileage:18, tank:40,   fuel:"Petrol"},
+      {model:"Punch EV",           mileage:55, tank:35,   fuel:"Electric"},
+      {model:"Nexon",              mileage:17, tank:44,   fuel:"Petrol"},
+      {model:"Nexon EV",           mileage:50, tank:40.5, fuel:"Electric"},
+      {model:"Harrier",            mileage:14, tank:50,   fuel:"Diesel"},
+      {model:"Safari",             mileage:14, tank:50,   fuel:"Diesel"},
+      {model:"Altroz",             mileage:21, tank:37,   fuel:"Petrol"},
+      {model:"Altroz iTurbo",      mileage:18, tank:37,   fuel:"Petrol"},
+      {model:"Curvv",              mileage:17, tank:45,   fuel:"Petrol"},
+      {model:"Curvv EV",           mileage:50, tank:55,   fuel:"Electric"},
+    ],
+    "Honda":[
+      {model:"Amaze",              mileage:18, tank:35,   fuel:"Petrol"},
+      {model:"City 5th Gen",       mileage:18, tank:40,   fuel:"Petrol"},
+      {model:"City e:HEV",         mileage:26, tank:40,   fuel:"Hybrid"},
+      {model:"Elevate",            mileage:15, tank:40,   fuel:"Petrol"},
+      {model:"WR-V",               mileage:17, tank:40,   fuel:"Petrol"},
+    ],
+    "Kia":[
+      {model:"Sonet",              mileage:18, tank:45,   fuel:"Petrol"},
+      {model:"Sonet Diesel",       mileage:22, tank:45,   fuel:"Diesel"},
+      {model:"Seltos",             mileage:16, tank:50,   fuel:"Petrol"},
+      {model:"Seltos Diesel",      mileage:20, tank:50,   fuel:"Diesel"},
+      {model:"Carens",             mileage:14, tank:45,   fuel:"Diesel"},
+      {model:"EV6",                mileage:50, tank:77.4, fuel:"Electric"},
+    ],
+    "Toyota":[
+      {model:"Glanza",             mileage:22, tank:37,   fuel:"Petrol"},
+      {model:"Urban Cruiser HyRyder",mileage:21,tank:44,  fuel:"Petrol"},
+      {model:"Innova Hycross",     mileage:21, tank:52,   fuel:"Hybrid"},
+      {model:"Innova Crysta",      mileage:12, tank:65,   fuel:"Diesel"},
+      {model:"Fortuner",           mileage:10, tank:80,   fuel:"Diesel"},
+      {model:"Fortuner Legender",  mileage:10, tank:80,   fuel:"Diesel"},
+      {model:"Hilux",              mileage:12, tank:80,   fuel:"Diesel"},
+      {model:"Camry Hybrid",       mileage:19, tank:50,   fuel:"Hybrid"},
+    ],
+    "Mahindra":[
+      {model:"Bolero",             mileage:15, tank:60,   fuel:"Diesel"},
+      {model:"Bolero Neo",         mileage:17, tank:40,   fuel:"Diesel"},
+      {model:"XUV 300",            mileage:17, tank:37,   fuel:"Petrol"},
+      {model:"XUV 400 EV",         mileage:50, tank:39.4, fuel:"Electric"},
+      {model:"XUV 700 Petrol",     mileage:14, tank:60,   fuel:"Petrol"},
+      {model:"XUV 700 Diesel",     mileage:16, tank:60,   fuel:"Diesel"},
+      {model:"Thar",               mileage:15, tank:57,   fuel:"Petrol"},
+      {model:"Thar Diesel",        mileage:17, tank:57,   fuel:"Diesel"},
+      {model:"Scorpio-N",          mileage:14, tank:60,   fuel:"Diesel"},
+      {model:"Scorpio Classic",    mileage:15, tank:60,   fuel:"Diesel"},
+      {model:"BE 6",               mileage:55, tank:79,   fuel:"Electric"},
+    ],
+    "MG":[
+      {model:"Astor",              mileage:15, tank:48,   fuel:"Petrol"},
+      {model:"Hector",             mileage:15, tank:52,   fuel:"Petrol"},
+      {model:"Hector Plus",        mileage:14, tank:52,   fuel:"Petrol"},
+      {model:"Gloster",            mileage:12, tank:69,   fuel:"Diesel"},
+      {model:"ZS EV",              mileage:45, tank:50.3, fuel:"Electric"},
+      {model:"Comet EV",           mileage:65, tank:17.3, fuel:"Electric"},
+      {model:"Windsor EV",         mileage:50, tank:38,   fuel:"Electric"},
+    ],
+    "Volkswagen":[
+      {model:"Polo",               mileage:18, tank:45,   fuel:"Petrol"},
+      {model:"Virtus",             mileage:18, tank:55,   fuel:"Petrol"},
+      {model:"Taigun",             mileage:17, tank:55,   fuel:"Petrol"},
+      {model:"Tiguan",             mileage:15, tank:60,   fuel:"Petrol"},
+    ],
+    "Skoda":[
+      {model:"Slavia",             mileage:18, tank:55,   fuel:"Petrol"},
+      {model:"Kushaq",             mileage:16, tank:50,   fuel:"Petrol"},
+      {model:"Octavia",            mileage:15, tank:55,   fuel:"Petrol"},
+      {model:"Kodiaq",             mileage:13, tank:70,   fuel:"Petrol"},
+      {model:"Superb",             mileage:16, tank:55,   fuel:"Petrol"},
+    ],
+    "Renault":[
+      {model:"Kwid",               mileage:22, tank:28,   fuel:"Petrol"},
+      {model:"Triber",             mileage:18, tank:40,   fuel:"Petrol"},
+      {model:"Kiger",              mileage:19, tank:40,   fuel:"Petrol"},
+      {model:"Duster",             mileage:14, tank:50,   fuel:"Petrol"},
+    ],
+    "Nissan":[
+      {model:"Magnite",            mileage:19, tank:40,   fuel:"Petrol"},
+      {model:"Kicks",              mileage:14, tank:55,   fuel:"Petrol"},
+    ],
+    "Jeep":[
+      {model:"Compass",            mileage:14, tank:60,   fuel:"Diesel"},
+      {model:"Meridian",           mileage:13, tank:61,   fuel:"Diesel"},
+      {model:"Wrangler",           mileage:11, tank:81.4, fuel:"Petrol"},
+    ],
+    "Ford":[
+      {model:"EcoSport",           mileage:17, tank:52,   fuel:"Petrol"},
+      {model:"Endeavour",          mileage:12, tank:80,   fuel:"Diesel"},
+      {model:"Aspire",             mileage:19, tank:42,   fuel:"Petrol"},
+    ],
+    "Citroen":[
+      {model:"C3",                 mileage:19, tank:40,   fuel:"Petrol"},
+      {model:"C3 Aircross",        mileage:17, tank:45,   fuel:"Petrol"},
+      {model:"eC3 EV",             mileage:50, tank:29.2, fuel:"Electric"},
+    ],
+  },
+  truck:{
+    "Tata":[
+      {model:"Ace Gold",           mileage:15, tank:55,   fuel:"Diesel"},
+      {model:"Ace EV",             mileage:25, tank:21.3, fuel:"Electric"},
+      {model:"Intra V30",          mileage:18, tank:40,   fuel:"Diesel"},
+      {model:"Ultra 1014",         mileage:10, tank:100,  fuel:"Diesel"},
+      {model:"Ultra T.7",          mileage:8,  tank:120,  fuel:"Diesel"},
+      {model:"LPT 1109",           mileage:8,  tank:120,  fuel:"Diesel"},
+      {model:"Prima 2828",         mileage:5,  tank:300,  fuel:"Diesel"},
+      {model:"Signa 3535",         mileage:4,  tank:400,  fuel:"Diesel"},
+      {model:"Winger",             mileage:12, tank:65,   fuel:"Diesel"},
+      {model:"Starbus 45 Seater",  mileage:5,  tank:200,  fuel:"Diesel"},
+    ],
+    "Mahindra":[
+      {model:"Jeeto",              mileage:20, tank:30,   fuel:"Diesel"},
+      {model:"Bolero Pickup",      mileage:12, tank:60,   fuel:"Diesel"},
+      {model:"Bolero Maxi Truck",  mileage:11, tank:60,   fuel:"Diesel"},
+      {model:"Supro",              mileage:18, tank:38,   fuel:"Diesel"},
+      {model:"Furio 7",            mileage:10, tank:90,   fuel:"Diesel"},
+      {model:"Furio 14",           mileage:7,  tank:120,  fuel:"Diesel"},
+    ],
+    "Eicher":[
+      {model:"Pro 2049",           mileage:8,  tank:120,  fuel:"Diesel"},
+      {model:"Pro 3015",           mileage:6,  tank:180,  fuel:"Diesel"},
+      {model:"Pro 6028",           mileage:5,  tank:250,  fuel:"Diesel"},
+      {model:"Pro 8035",           mileage:4,  tank:400,  fuel:"Diesel"},
+    ],
+    "Ashok Leyland":[
+      {model:"Dost Strong",        mileage:14, tank:60,   fuel:"Diesel"},
+      {model:"Partner",            mileage:16, tank:50,   fuel:"Diesel"},
+      {model:"BOSS 1415",          mileage:6,  tank:200,  fuel:"Diesel"},
+      {model:"U-Truck 2518",       mileage:4,  tank:300,  fuel:"Diesel"},
+      {model:"Viking Bus",         mileage:5,  tank:200,  fuel:"Diesel"},
+      {model:"Jan Bus",            mileage:5,  tank:180,  fuel:"Diesel"},
+    ],
+    "BharatBenz":[
+      {model:"914R",               mileage:12, tank:100,  fuel:"Diesel"},
+      {model:"1015R",              mileage:10, tank:120,  fuel:"Diesel"},
+      {model:"2523R",              mileage:5,  tank:300,  fuel:"Diesel"},
+      {model:"4028R",              mileage:4,  tank:400,  fuel:"Diesel"},
+    ],
+    "Force":[
+      {model:"Traveller 17",       mileage:12, tank:65,   fuel:"Diesel"},
+      {model:"Traveller 26",       mileage:10, tank:65,   fuel:"Diesel"},
+      {model:"Trax Cruiser",       mileage:12, tank:60,   fuel:"Diesel"},
+    ],
+    "Volvo":[
+      {model:"FH16 Truck",         mileage:3,  tank:600,  fuel:"Diesel"},
+      {model:"9400 Bus",           mileage:4,  tank:450,  fuel:"Diesel"},
+    ],
+  }
+};
+
+const DEFAULTS = {
+  bike:    {mileage:50,  tank:10,  emoji:"🏍️"},
+  scooter: {mileage:48,  tank:5.5, emoji:"🛵"},
+  car:     {mileage:15,  tank:40,  emoji:"🚗"},
+  truck:   {mileage:5,   tank:150, emoji:"🚛"},
+};
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let S = {type:null,brand:null,model:null,mileage:null,tank:null,unlisted:false,override:false};
+
+// ══════════════════════════════════════════════════════
+// STEP 1
+// ══════════════════════════════════════════════════════
+function selectType(btn){
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  S = {type:btn.dataset.type,brand:null,model:null,mileage:null,tank:null,unlisted:false,override:false};
+
+  const brands = Object.keys(DB[S.type]);
+  const sel = document.getElementById('brandSel');
+  sel.innerHTML = '<option value="">— Choose brand —</option>';
+  brands.forEach(b=>{ const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o); });
+  const u=document.createElement('option');u.value='__unlisted__';u.textContent='⚠️ Brand not listed';sel.appendChild(u);
+
+  resetStep2UI();
+  show('c2'); setStep(2);
+  document.getElementById('c2').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function resetStep2UI(){
+  document.getElementById('modelQ').value='';
+  document.getElementById('modelDD').innerHTML='';
+  document.getElementById('modelDD').classList.remove('open');
+  document.getElementById('vchip').classList.add('hidden');
+  document.getElementById('vchip').innerHTML='';
+  if(S.override) toggleOverride();
+  document.getElementById('fg-ov-mil').classList.remove('has-error');
+  document.getElementById('fg-ov-tank').classList.remove('has-error');
+  hide('c3'); hide('c4');
+}
+
+// ══════════════════════════════════════════════════════
+// BRAND CHANGE
+// ══════════════════════════════════════════════════════
+function onBrandChange(){
+  const v = document.getElementById('brandSel').value;
+  S.brand = v === '__unlisted__' ? null : v;
+  S.model = null; S.mileage = null; S.tank = null; S.unlisted = false;
+  document.getElementById('modelQ').value='';
+  document.getElementById('vchip').classList.add('hidden');
+  document.getElementById('modelDD').classList.remove('open');
+  hide('c3'); hide('c4');
+
+  if(v === '__unlisted__') applyUnlisted();
+  else renderDD(listForBrand(v,''), false);
+}
+
+function listForBrand(brand, q){
+  if(!brand) return [];
+  const list = DB[S.type][brand]||[];
+  if(!q) return list;
+  return list.filter(v=>v.model.toLowerCase().includes(q.toLowerCase()));
+}
+
+// ══════════════════════════════════════════════════════
+// MODEL SEARCH
+// ══════════════════════════════════════════════════════
+function onModelSearch(){
+  const q = document.getElementById('modelQ').value;
+  if(!S.brand){
+    const all=[];
+    Object.entries(DB[S.type]).forEach(([brand,models])=>models.forEach(m=>all.push({...m,brand})));
+    renderDD(all.filter(v=>v.model.toLowerCase().includes(q.toLowerCase())), true);
+  } else {
+    renderDD(listForBrand(S.brand, q), false);
+  }
+  document.getElementById('modelDD').classList.add('open');
+}
+
+function openDD(){
+  const dd = document.getElementById('modelDD');
+  if(!dd.innerHTML || dd.innerHTML===''){
+    if(S.brand) renderDD(listForBrand(S.brand,''), false);
+    else {
+      const all=[];
+      Object.entries(DB[S.type]||{}).forEach(([brand,models])=>models.forEach(m=>all.push({...m,brand})));
+      renderDD(all, true);
+    }
+  }
+  dd.classList.add('open');
+}
+
+function renderDD(list, showBrand){
+  const dd = document.getElementById('modelDD');
+  const items = list.length
+    ? list.map(v=>{
+        const vj = JSON.stringify(v).replace(/"/g,'&quot;');
+        return `<div class="model-option" onclick="pickModel(${vj})">
+          <div class="model-name-main">${showBrand&&v.brand?`<span class="model-brand-tag">${v.brand} </span>`:''}${v.model}</div>
+          <div class="model-stats-tag"><b>${v.mileage}</b>&nbsp;km/L&nbsp;·&nbsp;${v.tank}L</div>
+        </div>`;
+      }).join('')
+    : '<div class="model-empty">No models found</div>';
+
+  dd.innerHTML = items + `<div class="no-model-opt" onclick="applyUnlisted()">
+    <span>My vehicle isn't listed</span><span class="badge-amber">Use defaults</span>
+  </div>`;
+  dd.classList.add('open');
+}
+
+function pickModel(v){
+  S.brand = v.brand || S.brand;
+  S.model = v.model; S.mileage = v.mileage; S.tank = v.tank; S.unlisted = false;
+  document.getElementById('modelQ').value = v.model;
+  document.getElementById('modelDD').classList.remove('open');
+  if(v.brand) document.getElementById('brandSel').value = v.brand;
+  renderChip(v);
+  setOverrideVals(v.mileage, v.tank);
+  showTrip();
+}
+
+function applyUnlisted(){
+  const def = DEFAULTS[S.type];
+  S.unlisted=true; S.mileage=def.mileage; S.tank=def.tank;
+  S.model='Unlisted Vehicle';
+  document.getElementById('modelDD').classList.remove('open');
+  document.getElementById('modelQ').value='';
+  renderChip({model:'Default '+S.type.charAt(0).toUpperCase()+S.type.slice(1),mileage:def.mileage,tank:def.tank,fuel:'—',brand:'Unlisted',_u:true});
+  setOverrideVals(def.mileage, def.tank);
+  if(!S.override) toggleOverride();
+  showTrip();
+}
+
+function renderChip(v){
+  const e = DEFAULTS[S.type].emoji;
+  const chip = document.getElementById('vchip');
+  chip.className='vehicle-chip pop';
+  chip.innerHTML=`
+    <span class="chip-icon">${e}</span>
+    <div class="chip-info">
+      <div class="chip-name">${v._u?'Default values (edit below)':v.model}</div>
+      <div class="chip-meta">${v.brand&&!v._u?`<b>${v.brand}</b> · `:''}
+        <b>${v.mileage}</b>&nbsp;km/L &nbsp;·&nbsp; <b>${v.tank}</b>L tank &nbsp;·&nbsp; ${v.fuel||'—'}
+      </div>
+    </div>
+    <span class="chip-change" onclick="changeVehicle()">Change</span>`;
+}
+
+function setOverrideVals(m,t){
+  document.getElementById('ovMil').value=m;
+  document.getElementById('ovTank').value=t;
+}
+
+function changeVehicle(){
+  document.getElementById('vchip').classList.add('hidden');
+  document.getElementById('vchip').innerHTML='';
+  document.getElementById('modelQ').value='';
+  S.model=null;S.mileage=null;S.tank=null;
+  hide('c3');hide('c4');setStep(2);
+  if(S.override) toggleOverride();
+}
+
+function toggleOverride(){
+  S.override=!S.override;
+  document.getElementById('ovToggle').classList.toggle('on',S.override);
+  document.getElementById('ovFields').classList.toggle('show',S.override);
+}
+
+function showTrip(){
+  show('c3'); hide('c4'); setStep(3);
+  setTimeout(()=>document.getElementById('c3').scrollIntoView({behavior:'smooth',block:'nearest'}),80);
+}
+
+// ══════════════════════════════════════════════════════
+// MODE SWITCHER
+// ══════════════════════════════════════════════════════
+let calcMode = 'A'; // A = trip cost, B = distance range
+
+function switchMode(m){
+  calcMode = m;
+  document.getElementById('modeA').classList.toggle('active', m==='A');
+  document.getElementById('modeB').classList.toggle('active', m==='B');
+
+  const distInput = document.getElementById('dist');
+  const lbl1 = document.getElementById('lbl-input1');
+  const unit1 = document.getElementById('unit-input1');
+  const c3title = document.getElementById('c3-title');
+  const c3sub = document.getElementById('c3-sub');
+  const calcBtn = document.getElementById('calcBtnLabel');
+
+  if(m==='A'){
+    lbl1.textContent = 'Distance to Travel';
+    unit1.textContent = 'km';
+    distInput.placeholder = 'e.g. 300';
+    c3title.textContent = 'Trip Details';
+    c3sub.textContent = 'Distance & current fuel price';
+    calcBtn.innerHTML = 'Calculate Trip Cost <span>→</span>';
+  } else {
+    lbl1.textContent = 'Fuel Budget (₹)';
+    unit1.textContent = '₹';
+    distInput.placeholder = 'e.g. 500';
+    c3title.textContent = 'Your Budget';
+    c3sub.textContent = 'How much ₹ do you have for fuel?';
+    calcBtn.innerHTML = 'Calculate Distance Range <span>→</span>';
+  }
+  // Clear previous results
+  distInput.value='';
+  hide('c4');
+  document.getElementById('fg-dist').classList.remove('has-error');
+}
+
+// ══════════════════════════════════════════════════════
+// CALCULATE
+// ══════════════════════════════════════════════════════
+function calculate(){
+  let mileage=S.mileage, tank=S.tank;
+
+  if(S.override){
+    const om=parseFloat(document.getElementById('ovMil').value);
+    const ot=parseFloat(document.getElementById('ovTank').value);
+    let ok=true;
+    if(isNaN(om)||om<=0){document.getElementById('fg-ov-mil').classList.add('has-error');ok=false;}
+    else{document.getElementById('fg-ov-mil').classList.remove('has-error');mileage=om;}
+    if(isNaN(ot)||ot<=0){document.getElementById('fg-ov-tank').classList.add('has-error');ok=false;}
+    else{document.getElementById('fg-ov-tank').classList.remove('has-error');tank=ot;}
+    if(!ok){shake('c2');return;}
+  }
+
+  const input1=parseFloat(document.getElementById('dist').value);
+  const p=parseFloat(document.getElementById('fprice').value);
+  let ok=true;
+  if(isNaN(input1)||input1<=0){document.getElementById('fg-dist').classList.add('has-error');ok=false;}
+  else document.getElementById('fg-dist').classList.remove('has-error');
+  if(isNaN(p)||p<=0){document.getElementById('fg-price').classList.add('has-error');ok=false;}
+  else document.getElementById('fg-price').classList.remove('has-error');
+  if(!ok){shake('c3');return;}
+
+  const emoji=DEFAULTS[S.type].emoji;
+  const maxD=tank*mileage;
+  document.getElementById('rvlabel').innerHTML=`<span style="font-size:1.1rem">${emoji}</span>&nbsp;${S.model||'Vehicle'}`;
+
+  if(calcMode==='A'){
+    // Mode A: cost for a given distance
+    const d=input1;
+    const fuelReq=d/mileage, cost=fuelReq*p;
+    const enough=fuelReq<=tank, pct=Math.min((fuelReq/tank)*100,100);
+    const refills=enough?0:Math.ceil(fuelReq/tank)-1;
+
+    document.getElementById('rbody').innerHTML=`
+      <div class="stat-grid pop">
+        <div class="stat accent"><div class="stat-lbl">Fuel Required</div><div class="stat-val">${f(fuelReq)}</div><div class="stat-unit">Litres needed</div></div>
+        <div class="stat accent"><div class="stat-lbl">Total Cost</div><div class="stat-val">₹${f(cost,0)}</div><div class="stat-unit">@ ₹${f(p)}/L</div></div>
+        <div class="stat"><div class="stat-lbl">Max Range</div><div class="stat-val">${f(maxD,0)}</div><div class="stat-unit">km on full tank</div></div>
+        <div class="stat"><div class="stat-lbl">Cost / km</div><div class="stat-val">₹${f(p/mileage)}</div><div class="stat-unit">per kilometre</div></div>
+      </div>
+      <div class="status-box ${enough?'ok':'warn'} pop">
+        <div class="s-icon">${enough?'✅':'⛽'}</div>
+        <div>
+          <div class="s-title">${enough?'Tank is sufficient for this trip!':`Refill needed — ${refills} stop${refills>1?'s':''} required`}</div>
+          <div class="s-sub">${enough
+            ?`Uses ${f(pct,1)}% of tank · ${f(tank-fuelReq)} L remaining after trip`
+            :`Need ${f(fuelReq)} L · tank holds only ${f(tank)} L`}</div>
+        </div>
+      </div>
+      <div class="bar-wrap pop">
+        <div class="bar-labels"><span>Tank usage</span><span>${f(Math.min(fuelReq,tank))} / ${f(tank)} L</span></div>
+        <div class="bar-bg"><div class="bar-fill ${enough?'':'over'}" id="bfill" style="width:0%"></div></div>
+      </div>`;
+
+    show('c4'); setStep(4);
+    requestAnimationFrame(()=>setTimeout(()=>{
+      document.getElementById('bfill').style.width=pct+'%';
+      document.getElementById('c4').scrollIntoView({behavior:'smooth',block:'nearest'});
+    },60));
+
+  } else {
+    // Mode B: distance for a given ₹ budget
+    const budget=input1;
+    const litersAffordable=budget/p;
+    const distCovered=litersAffordable*mileage;
+    const tanksNeeded=litersAffordable/tank;
+    const pct=Math.min((litersAffordable/tank)*100,100);
+    const fullTankCost=tank*p;
+    const withinTank=litersAffordable<=tank;
+
+    document.getElementById('rbody').innerHTML=`
+      <div class="stat-grid pop">
+        <div class="stat accent"><div class="stat-lbl">Distance Covered</div><div class="stat-val">${f(distCovered,0)}</div><div class="stat-unit">kilometres</div></div>
+        <div class="stat accent"><div class="stat-lbl">Fuel You Get</div><div class="stat-val">${f(litersAffordable)}</div><div class="stat-unit">Litres for ₹${f(budget,0)}</div></div>
+        <div class="stat"><div class="stat-lbl">Max Range</div><div class="stat-val">${f(maxD,0)}</div><div class="stat-unit">km on full tank</div></div>
+        <div class="stat"><div class="stat-lbl">Full Tank Cost</div><div class="stat-val">₹${f(fullTankCost,0)}</div><div class="stat-unit">${f(tank)} L @ ₹${f(p)}/L</div></div>
+      </div>
+      <div class="status-box ${withinTank?'ok':'warn'} pop">
+        <div class="s-icon">${withinTank?'✅':'⛽'}</div>
+        <div>
+          <div class="s-title">${withinTank
+            ?`₹${f(budget,0)} fills ${f(pct,1)}% of your tank`
+            :`Budget covers ${f(tanksNeeded,1)}× full tanks`}</div>
+          <div class="s-sub">${withinTank
+            ?`${f(litersAffordable)} L fits in tank (capacity: ${f(tank)} L)`
+            :`You can fill the tank ${Math.floor(tanksNeeded)} time${Math.floor(tanksNeeded)>1?'s':''} + ${f((tanksNeeded%1)*tank)} L extra`}</div>
+        </div>
+      </div>
+      <div class="bar-wrap pop">
+        <div class="bar-labels"><span>Budget fill level</span><span>${f(Math.min(litersAffordable,tank))} / ${f(tank)} L</span></div>
+        <div class="bar-bg"><div class="bar-fill ${withinTank?'':'over'}" id="bfill" style="width:0%"></div></div>
+      </div>`;
+
+    show('c4'); setStep(4);
+    requestAnimationFrame(()=>setTimeout(()=>{
+      document.getElementById('bfill').style.width=pct+'%';
+      document.getElementById('c4').scrollIntoView({behavior:'smooth',block:'nearest'});
+    },60));
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// RESET
+// ══════════════════════════════════════════════════════
+function resetAll(){
+  S={type:null,brand:null,model:null,mileage:null,tank:null,unlisted:false,override:false};
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('brandSel').innerHTML='<option value="">— Choose brand —</option>';
+  document.getElementById('modelQ').value='';
+  document.getElementById('modelDD').innerHTML='';
+  document.getElementById('modelDD').classList.remove('open');
+  document.getElementById('vchip').classList.add('hidden');
+  document.getElementById('vchip').innerHTML='';
+  document.getElementById('ovToggle').classList.remove('on');
+  document.getElementById('ovFields').classList.remove('show');
+  document.getElementById('dist').value='';
+  document.getElementById('fprice').value='';
+  document.querySelectorAll('.has-error').forEach(e=>e.classList.remove('has-error'));
+  hide('c2');hide('c3');hide('c4');
+  setStep(1);
+  // Reset mode to A
+  calcMode='A';
+  document.getElementById('modeA').classList.add('active');
+  document.getElementById('modeB').classList.remove('active');
+  document.getElementById('lbl-input1').textContent='Distance to Travel';
+  document.getElementById('unit-input1').textContent='km';
+  document.getElementById('dist').placeholder='e.g. 300';
+  document.getElementById('c3-title').textContent='Trip Details';
+  document.getElementById('calcBtnLabel').innerHTML='Calculate Trip Cost <span>→</span>';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function show(id){document.getElementById(id).classList.remove('hidden');}
+function hide(id){document.getElementById(id).classList.add('hidden');}
+function f(n,d=2){return n.toLocaleString('en-IN',{maximumFractionDigits:d,minimumFractionDigits:d});}
+function shake(id){const el=document.getElementById(id);el.classList.add('shake');setTimeout(()=>el.classList.remove('shake'),400);}
+function setStep(n){
+  for(let i=1;i<=4;i++){
+    const d=document.getElementById('sdot'+i);
+    d.classList.remove('active','done');
+    if(i<n)d.classList.add('done');
+    if(i===n)d.classList.add('active');
+    d.querySelector('.step-circle').textContent=i<n?'✓':i;
+  }
+}
+
+document.addEventListener('click',e=>{
+  const dd=document.getElementById('modelDD');
+  const wrap=document.querySelector('.model-search-wrap');
+  if(wrap&&!wrap.contains(e.target))dd.classList.remove('open');
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter')calculate();});
+</script>
+</body>
+</html>
